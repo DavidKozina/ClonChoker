@@ -1,18 +1,20 @@
 @echo off
+setlocal ENABLEDELAYEDEXPANSION
 If "%1"=="help" goto help
 If "%1"=="-help" goto help
 If "%1"=="/?" goto help
 IF "%1"=="install" goto install
 goto unsuported
 
-
 :install
+Echo: > ClonChockerTextStorage.txt
 SHIFT
 Set /A num=0
 Set KCsource=%1
 SET KCprerelease=
 SET KCtest=false
 SET KCask=false
+SET KCfile=
 SHIFT
 
 :setloop
@@ -25,6 +27,9 @@ if "%1"=="" GOTO main
   if "%1"=="-pass" goto setpass
   if "%1"=="--p" goto setpass
 
+  if "%1"=="-file" goto setfile
+  if "%1"=="--f" goto setfile
+
   IF "%1"=="-test" goto settest
   if "%1"=="--t" goto settest
 
@@ -36,13 +41,13 @@ if "%1"=="" GOTO main
 
   REM ELSE
 
-  SET KCpackages[%num%]=%1
   IF "%2"=="-v" (
-     SET KCpackages[%num%]=%1 -version %3
+     Echo %1 %3 >> ClonChockerTextStorage.txt
      SHIFT
      SHIFT
+     goto endsetloop
   )
-  SET /A num=%num%+1
+  Echo %1 >> ClonChockerTextStorage.txt
 
   :endsetloop
   SHIFT
@@ -52,6 +57,10 @@ Goto setloop
 :setuser
     SHIFT
     SET KCusername=%1
+    GOTO endsetloop
+:setfile
+    SHIFT
+    SET KCfile=%1
     GOTO endsetloop
 :setpass
     SHIFT
@@ -88,33 +97,40 @@ if NOT "%KCsource%"=="" (
 echo Source required
 goto eof
 :postcredentials
-set i=0
-:mainloop
+
 setlocal
-if %i%==%num% goto :Continue
-for /f "usebackq delims== tokens=2" %%p in (`set KCpackages[%i%]`) do (
-  nuget install %%p -source Feed %KCprerelease% -OutputDirectory .\ClonChokerCache || nuget install %%p -source %KCsource% %KCprerelease% -ExcludeVersion -OutputDirectory .\ClonChokerCache || goto error
-  choco install %%p -source ./ClonChokerCache/ -pre -y || goto error
-  choco install %%p -source ./ClonChokerCache/ -pre -y || goto error
-  del /f /s /q ".\ClonChokerCache\%%p" 1>nul
-  rmdir /s /q ".\ClonChokerCache\%%p"
-  IF %KCtest%==true (
-    choco uninstall %%p -y || goto error
+SET /a num=0
+If "%KCfile%"=="" SET KCfile=ClonChockerTextStorage.txt
+for /f "usebackq tokens=1-4 delims= " %%a in ("%KCfile%") do (
+  ECHO installing %%a %%b
+  if NOT "%%b"=="" (
+      nuget install %%a -version %%b -source Feed %KCprerelease% -OutputDirectory .\ClonChokerStorage || nuget install %%p -source %KCsource% %KCprerelease% -ExcludeVersion -OutputDirectory .\ClonChokerCache || goto error
+      choco install %%a --version %%b -source ./ClonChokerStorage/ -pre -y || goto error
   )
+  if "%%b"=="" (
+      nuget install %%a -source Feed %KCprerelease% -OutputDirectory .\ClonChokerStorage || nuget install %%p -source %KCsource% %KCprerelease% -ExcludeVersion -OutputDirectory .\ClonChokerCache || goto error
+      choco install %%a -source ./ClonChokerStorage/ -pre -y || goto error
+  )
+
+  del /f /s /q ".\ClonChokerStorage\%%a*" 1>nul
+  rmdir /s /q ".\ClonChokerStorage\%%a*"
+  IF %KCtest%==true (
+      if NOT "%%b"=="" choco uninstall %%a --version %%b -y || goto error
+      if "%%b"=="" choco uninstall %%a -y || goto error
+  )
+  SET /a success=!success! +1
+  :error
+  SET /a num=!num! +1
+  echo:
 )
-Set /a success=%success%+1
-:error
-set /a i=%i%+1
-goto mainloop
 
-
-:Continue
-rmdir /s /q ".\ClonChokerCache"
+rmdir /s /q ".\ClonChokerStorage"
 if NOT "%KCsource%"=="" (
   if NOT "%KCusername%"=="" (
     if NOT "%KCpassword%"=="" (
       nuget sources remove -name "Feed" 1>nul
 )))
+del ClonChockerTextStorage.txt
 echo:
 echo:
 Echo Succes: %success%/%num%
@@ -129,6 +145,7 @@ echo This batch can download packages from private Klondike server and install t
 echo:
 echo:
 echo ClonChoker install *source* [-params] [packagenames]
+echo ClonChoker install *source* -file *filename* [-params]
 echo:
 echo -username, -user, --u
 echo set username
