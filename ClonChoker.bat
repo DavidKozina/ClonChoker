@@ -82,6 +82,7 @@ Goto setloop
 
 :main
 
+choco install nuget.commandline  -y
 SET success=0
 if NOT "%KCsource%"=="" (
   if NOT "%KCusername%"=="" (
