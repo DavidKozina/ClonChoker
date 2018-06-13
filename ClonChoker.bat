@@ -82,17 +82,17 @@ Goto setloop
 
 :main
 
-choco install nuget.commandline  -y
+choco install nuget.commandline -y
 SET success=0
 if NOT "%KCsource%"=="" (
   if NOT "%KCusername%"=="" (
     if NOT "%KCpassword%"=="" (
-      nuget sources add -Name "Feed" -Source "%KCsource%" -username "%KCusername%" -password "%KCpassword%" || echo "Unable to create credentials"
+      nuget sources add -Name "ClonChokerFeed" -Source "%KCsource%" -username "%KCusername%" -password "%KCpassword%" || echo "Unable to create credentials"
       GOTO postcredentials
     )
     echo You should enter both of username and password
   )
-  nuget sources add -Name "Feed" -Source "%KCsource%"
+  nuget sources add -Name "ClonChokerFeed" -Source "%KCsource%"
   GOTO postcredentials
 )
 echo Source required
@@ -105,16 +105,15 @@ If "%KCfile%"=="" SET KCfile=ClonChockerTextStorage.txt
 for /f "usebackq tokens=1-4 delims= " %%a in ("%KCfile%") do (
   ECHO installing %%a %%b
   if NOT "%%b"=="" (
-      nuget install %%a -version %%b -source Feed %KCprerelease% -OutputDirectory .\ClonChokerStorage || nuget install %%p -source %KCsource% %KCprerelease% -ExcludeVersion -OutputDirectory .\ClonChokerCache || goto error
+      nuget install %%a -version %%b -source ClonChokerFeed %KCprerelease% -OutputDirectory .\ClonChokerStorage || nuget install %%p -source %KCsource% %KCprerelease% -ExcludeVersion -OutputDirectory .\ClonChokerCache || goto error
       choco install %%a --version %%b -source ./ClonChokerStorage/ -pre -y || goto error
   )
   if "%%b"=="" (
-      nuget install %%a -source Feed %KCprerelease% -OutputDirectory .\ClonChokerStorage || nuget install %%p -source %KCsource% %KCprerelease% -ExcludeVersion -OutputDirectory .\ClonChokerCache || goto error
+      nuget install %%a -source ClonChokerFeed %KCprerelease% -OutputDirectory .\ClonChokerStorage || nuget install %%p -source %KCsource% %KCprerelease% -ExcludeVersion -OutputDirectory .\ClonChokerCache || goto error
       choco install %%a -source ./ClonChokerStorage/ -pre -y || goto error
   )
 
   del /f /s /q ".\ClonChokerStorage\%%a*" 1>nul
-  rmdir /s /q ".\ClonChokerStorage\%%a*"
   IF %KCtest%==true (
       if NOT "%%b"=="" choco uninstall %%a --version %%b -y || goto error
       if "%%b"=="" choco uninstall %%a -y || goto error
@@ -129,7 +128,7 @@ rmdir /s /q ".\ClonChokerStorage"
 if NOT "%KCsource%"=="" (
   if NOT "%KCusername%"=="" (
     if NOT "%KCpassword%"=="" (
-      nuget sources remove -name "Feed" 1>nul
+      nuget sources remove -name "ClonChokerFeed" 1>nul
 )))
 del ClonChockerTextStorage.txt
 echo:
@@ -142,17 +141,17 @@ goto eof
 :help
 echo ClonChoker help:
 echo:
-echo This batch can download packages from private Klondike server and install them by chocolatey.
+echo This batch can download packages from private Klondike (or some other nuget) servers and install them by chocolatey.
 echo:
 echo:
 echo ClonChoker install *source* [-params] [packagenames]
 echo ClonChoker install *source* -file *filename* [-params]
 echo:
 echo -username, -user, --u
-echo set username
+echo to set username
 echo:
 echo -password, -pass, --p
-echo set password
+echo to set password
 echo:
 echo -prerelease, -pre
 echo allow downloading prerelease versions
@@ -161,10 +160,10 @@ echo help, -help, /?
 echo show this help
 echo:
 echo -debug, --d
-echo set echo on
+echo sets echo on
 echo:
 echo -test, --t
-echo automatically uninstall package after installation
+echo automatically uninstalls package after installation, without any practical use
 goto eof
 
 
