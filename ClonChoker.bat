@@ -144,7 +144,7 @@ echo:
 echo This batch can download packages from private Klondike (or some other nuget) servers and install them by chocolatey.
 echo:
 echo:
-echo ClonChoker install *source* [-params] [packagenames]
+echo ClonChoker install *source* [-params] [packagenames [-v *version*]]
 echo ClonChoker install *source* -file *filename* [-params]
 echo:
 echo -username, -user, --u
